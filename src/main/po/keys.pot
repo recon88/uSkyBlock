@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-09-23 07:36+0200\n"
+"POT-Creation-Date: 2015-09-23 23:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1427,15 +1427,15 @@ msgstr ""
 msgid "§eTrading isn't allowed on other islands. Go home - cheater!"
 msgstr ""
 
-#: us/talabrek/ultimateskyblock/event/PlayerEvents.java:116
+#: us/talabrek/ultimateskyblock/event/PlayerEvents.java:124
 msgid "§eChanging your obsidian back into lava. Be careful!"
 msgstr ""
 
-#: us/talabrek/ultimateskyblock/event/PlayerEvents.java:148
+#: us/talabrek/ultimateskyblock/event/PlayerEvents.java:156
 msgid "§4It's a bad idea to replace your lava!"
 msgstr ""
 
-#: us/talabrek/ultimateskyblock/event/PlayerEvents.java:238
+#: us/talabrek/ultimateskyblock/event/PlayerEvents.java:246
 msgid "§4That player has forbidden you from teleporting to their island."
 msgstr ""
 
