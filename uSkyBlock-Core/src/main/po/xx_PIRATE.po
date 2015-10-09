@@ -1167,6 +1167,17 @@ msgstr "Owner: {0}"
 msgid "You cannot pick up other players' loot when you are a visitor!"
 msgstr "Ye cannot pick up other pirates' loot when ye be a visitor!"
 
+msgid "§eVisitors can't drop items!"
+msgstr ""
+
+#, fuzzy, java-format
+msgid "Owner: {0}"
+msgstr "Rank: {0}"
+
+#, fuzzy
+msgid "You cannot pick up other players' loot when you are a visitor!"
+msgstr "§eYou can not use another islands portals! Shame on you - cheater!"
+
 msgid "Config:"
 msgstr "Config:"
 
