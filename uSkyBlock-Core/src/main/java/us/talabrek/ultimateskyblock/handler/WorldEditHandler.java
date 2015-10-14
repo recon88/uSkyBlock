@@ -67,7 +67,7 @@ public class WorldEditHandler {
             final Operation operation = holder
                     .createPaste(editSession, worldData)
                     .to(to)
-                    .ignoreAirBlocks(false)
+                    .ignoreAirBlocks(true)
                     .build();
             AsyncWorldEditHandler.registerCompletion(player);
             Operations.completeBlindly(operation);
