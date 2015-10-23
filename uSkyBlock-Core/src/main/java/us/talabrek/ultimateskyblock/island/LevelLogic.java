@@ -35,7 +35,7 @@ public class LevelLogic {
     private static final Logger log = Logger.getLogger(CN);
 
     private static final Pattern KEY_PATTERN = Pattern.compile("(?<id>[0-9]+)([/:](?<sub>(\\*|[0-9]+|[0-9]+-[0-9]+)))?");
-    private static final int MAX_BLOCK = 255;
+    private static final int MAX_BLOCK = 4095;
     private static final int DATA_BITS = 4;
     private static final int MAX_INDEX = MAX_BLOCK << DATA_BITS;
     private static final int DATA_MASK = 0xf;
