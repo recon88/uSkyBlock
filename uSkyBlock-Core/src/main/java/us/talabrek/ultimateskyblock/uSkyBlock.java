@@ -1,5 +1,6 @@
 package us.talabrek.ultimateskyblock;
 
+import com.avaje.ebean.EbeanServer;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import dk.lockfuglsang.minecraft.command.Command;
 import dk.lockfuglsang.minecraft.command.CommandManager;
@@ -42,6 +43,7 @@ import us.talabrek.ultimateskyblock.command.IslandCommand;
 import us.talabrek.ultimateskyblock.command.IslandTalkCommand;
 import us.talabrek.ultimateskyblock.command.PartyTalkCommand;
 import us.talabrek.ultimateskyblock.command.admin.DebugCommand;
+import us.talabrek.ultimateskyblock.database.USBDatabase;
 import us.talabrek.ultimateskyblock.event.ExploitEvents;
 import us.talabrek.ultimateskyblock.event.GriefEvents;
 import us.talabrek.ultimateskyblock.event.ItemDropEvents;
@@ -69,6 +71,7 @@ import us.talabrek.ultimateskyblock.island.task.LocateChestTask;
 import us.talabrek.ultimateskyblock.island.task.RecalculateRunnable;
 import us.talabrek.ultimateskyblock.menu.ConfigMenu;
 import us.talabrek.ultimateskyblock.menu.SkyBlockMenu;
+import us.talabrek.ultimateskyblock.mojang.MojangAPI;
 import us.talabrek.ultimateskyblock.player.PerkLogic;
 import us.talabrek.ultimateskyblock.player.PlayerInfo;
 import us.talabrek.ultimateskyblock.player.PlayerLogic;
@@ -77,10 +80,9 @@ import us.talabrek.ultimateskyblock.player.PlayerPerk;
 import us.talabrek.ultimateskyblock.util.LocationUtil;
 import us.talabrek.ultimateskyblock.util.PlayerUtil;
 import us.talabrek.ultimateskyblock.util.TimeUtil;
-import us.talabrek.ultimateskyblock.uuid.FilePlayerDB;
+import us.talabrek.ultimateskyblock.uuid.EBeanPlayerDB;
 import us.talabrek.ultimateskyblock.uuid.PlayerDB;
 import us.talabrek.ultimateskyblock.uuid.PlayerNameChangeListener;
-import us.talabrek.ultimateskyblock.uuid.PlayerNameChangeManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -149,13 +151,13 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
         uSkyBlock.skyBlockWorld = null;
     }
 
+    private USBDatabase database;
+    private MojangAPI mojangAPI;
     private PlayerDB playerDB;
     private ConfirmHandler confirmHandler;
 
     private CooldownHandler cooldownHandler;
     private PlayerLogic playerLogic;
-
-    private PlayerNameChangeManager playerNameChangeManager;
 
     private Map<String, Biome> validBiomes = new HashMap<String, Biome>() {
         {
@@ -193,12 +195,18 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
         } catch (Exception e) {
             log(Level.INFO, tr("Something went wrong saving the island and/or party data!"), e);
         }
-        challengeLogic.shutdown();
-        playerLogic.shutdown();
-        islandLogic.shutdown();
-        playerNameChangeManager.shutdown();
+        if (challengeLogic != null) {
+            challengeLogic.shutdown();
+        }
+        if (playerLogic != null) {
+            playerLogic.shutdown();
+        }
+        if (islandLogic != null) {
+            islandLogic.shutdown();
+        }
         AsyncWorldEditHandler.onDisable(this);
         DebugCommand.disableLogging(null);
+        database = null;
     }
 
     @Override
@@ -273,6 +281,11 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
         log(Level.INFO, getVersionInfo(false));
     }
 
+    @Override
+    public EbeanServer getDatabase() {
+        return database.getDatabase();
+    }
+
     public synchronized boolean isRequirementsMet(CommandSender sender, Command command) {
         if (missingRequirements == null) {
             PluginManager pluginManager = getServer().getPluginManager();
@@ -321,7 +334,6 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
     public void registerEvents() {
         final PluginManager manager = getServer().getPluginManager();
         manager.registerEvents(new PlayerNameChangeListener(this), this);
-        manager.registerEvents(playerNameChangeManager, this);
         manager.registerEvents(new PlayerEvents(this), this);
         manager.registerEvents(new MenuEvents(this), this);
         manager.registerEvents(new ExploitEvents(this), this);
@@ -1157,8 +1169,12 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
         I18nUtil.clearCache();
         // Update all of the loaded configs.
         FileUtil.reload();
+        database = new USBDatabase(this);
+        database.init();
+        mojangAPI = new MojangAPI();
 
-        playerDB = new FilePlayerDB(new File(getDataFolder(), "uuid2name.yml"));
+        //playerDB = new FilePlayerDB(new File(getDataFolder(), "uuid2name.yml"));
+        playerDB = new EBeanPlayerDB(this, database);
         PlayerUtil.loadConfig(playerDB, getConfig());
         islandGenerator = new IslandGenerator(getDataFolder(), getConfig());
         perkLogic = new PerkLogic(this, islandGenerator);
@@ -1169,8 +1185,7 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
         orphanLogic = new OrphanLogic(this);
         islandLogic = new IslandLogic(this, directoryIslands, orphanLogic);
         notifier = new PlayerNotifier(getConfig());
-        playerLogic = new PlayerLogic(this);
-        playerNameChangeManager = new PlayerNameChangeManager(this, playerDB);
+        playerLogic = new PlayerLogic(this, playerDB);
         if (autoRecalculateTask != null) {
             autoRecalculateTask.cancel();
         }
@@ -1396,13 +1411,12 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
         msg += pre("\u00a77Version: \u00a7b{0}\n", description.getVersion());
         msg += pre("\u00a77Description: \u00a7b{0}\n", description.getDescription());
         msg += pre("\u00a77Language: \u00a7b{0} ({1})\n", getConfig().get("language", "en"), I18nUtil.getI18n().getLocale());
-        msg += pre("\u00a77------------------------------\n");
         msg += pre("\u00a77Server: \u00a7e{0} {1}\n", getServer().getName(), getServer().getVersion());
+        msg += pre("\u00a77------------------------------\n");
         for (String[] dep : depends) {
             Plugin dependency = getServer().getPluginManager().getPlugin(dep[0]);
             if (dependency != null) {
-                msg += pre("\u00a77------------------------------\n");
-                msg += pre("\u00a77\u00a7d{0} \u00a7f{1} \u00a77({1}\u00a77)\n", dependency.getName(),
+                msg += pre("\u00a77\u00a7d{0} \u00a7f{1} \u00a77({2}\u00a77)\n", dependency.getName(),
                         dependency.getDescription().getVersion(),
                         checkEnabled ? (dependency.isEnabled() ? pre("\u00a72ENABLED") : pre("\u00a74DISABLED")) : pre("N/A"));
             }
@@ -1442,11 +1456,11 @@ public class uSkyBlock extends JavaPlugin implements uSkyBlockAPI, CommandManage
         return playerLogic;
     }
 
-    public PlayerNameChangeManager getPlayerNameChangeManager() {
-        return playerNameChangeManager;
-    }
-
     public Map<String, Biome> getValidBiomes() {
         return validBiomes;
+    }
+
+    public MojangAPI getMojangAPI() {
+        return mojangAPI;
     }
 }
