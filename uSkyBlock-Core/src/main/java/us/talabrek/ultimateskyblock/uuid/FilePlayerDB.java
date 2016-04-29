@@ -10,11 +10,15 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * PlayerDB backed by a simple yml-file.
  */
 public class FilePlayerDB implements PlayerDB {
+    private static final Logger log = Logger.getLogger(FilePlayerDB.class.getName());
+
     private final YamlConfiguration config;
     private final File file;
 
@@ -60,10 +64,15 @@ public class FilePlayerDB implements PlayerDB {
     }
 
     @Override
-    public synchronized void updatePlayer(Player player) throws IOException {
+    public synchronized void updatePlayer(Player player) {
         String uuid = UUIDUtil.asString(player.getUniqueId());
         config.set(uuid + ".name", player.getName());
         config.set(uuid + ".displayName", player.getDisplayName());
-        config.save(file);
+        try {
+            // TODO: 09/01/2016 - R4zorax: spin off saving to off the EDT
+            config.save(file);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Error saving playerdb", e);
+        }
     }
 }

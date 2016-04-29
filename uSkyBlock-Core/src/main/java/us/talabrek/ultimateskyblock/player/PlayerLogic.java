@@ -6,12 +6,12 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import us.talabrek.ultimateskyblock.handler.WorldGuardHandler;
 import us.talabrek.ultimateskyblock.island.IslandInfo;
 import us.talabrek.ultimateskyblock.uSkyBlock;
+import us.talabrek.ultimateskyblock.uuid.PlayerDB;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -27,10 +27,12 @@ public class PlayerLogic {
     private static final Logger log = Logger.getLogger(PlayerLogic.class.getName());
     private final LoadingCache<UUID, PlayerInfo> playerCache;
     private final uSkyBlock plugin;
+    private final PlayerDB playerDB;
     private final BukkitTask saveTask;
 
-    public PlayerLogic(uSkyBlock plugin) {
+    public PlayerLogic(uSkyBlock plugin, final PlayerDB playerDB) {
         this.plugin = plugin;
+        this.playerDB = playerDB;
         playerCache = CacheBuilder
                 .from(plugin.getConfig().getString("options.advanced.playerCache", "maximumSize=200,expireAfterWrite=15m,expireAfterAccess=10m"))
                 .removalListener(new RemovalListener<UUID, PlayerInfo>() {
@@ -70,15 +72,11 @@ public class PlayerLogic {
     }
 
     public PlayerInfo loadPlayerData(String playerName) {
-        return loadPlayerData(Bukkit.getOfflinePlayer(playerName));
+        return loadPlayerData(playerDB.getUUIDFromName(playerName), playerName);
     }
 
     public PlayerInfo loadPlayerData(UUID uuid) {
-        return loadPlayerData(Bukkit.getOfflinePlayer(uuid));
-    }
-
-    public PlayerInfo loadPlayerData(OfflinePlayer player) {
-        return loadPlayerData(player.getUniqueId(), player.getName());
+        return loadPlayerData(uuid, playerDB.getName(uuid));
     }
 
     private PlayerInfo loadPlayerData(UUID playerUUID, String playerName) {
@@ -91,8 +89,6 @@ public class PlayerLogic {
 
         final Player onlinePlayer = Bukkit.getPlayer(playerName);
         if (onlinePlayer != null && onlinePlayer.isOnline()) {
-            plugin.getPlayerNameChangeManager().checkPlayer(onlinePlayer, playerInfo);
-
             if (playerInfo.getHasIsland()) {
                 IslandInfo islandInfo = plugin.getIslandInfo(playerInfo);
                 if (islandInfo != null) {
@@ -116,6 +112,12 @@ public class PlayerLogic {
                                             tr("\u00a7eSending you to spawn.")
                                     });
                                     plugin.spawnTeleport(onlinePlayer, true);
+                                } else if (islandInfo != null && islandInfo.isLocked()) {
+                                    onlinePlayer.sendMessage(new String[]{
+                                            tr("\u00a7eThe island has been §cLOCKED", islandInfo.getLeader()),
+                                            tr("\u00a7eSending you to spawn.")
+                                    });
+                                    plugin.spawnTeleport(onlinePlayer, true);
                                 }
                             }
                         }
@@ -130,13 +132,13 @@ public class PlayerLogic {
     }
 
     public PlayerInfo getPlayerInfo(String playerName) {
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
-        if (offlinePlayer == null || offlinePlayer.getUniqueId() == null || offlinePlayer.getName() == null) {
+        UUID uuid = playerDB.getUUIDFromName(playerName);
+        if (uuid == null || playerName == null) {
             return null;
         }
         // Do not return anything if it is loading.
         try {
-            return playerCache.get(offlinePlayer.getUniqueId());
+            return playerCache.get(uuid);
         } catch (ExecutionException e) {
             throw new IllegalStateException(e); // Escalate - we need it in the server log
         }

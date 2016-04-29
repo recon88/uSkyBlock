@@ -81,7 +81,7 @@ public class PlayerEvents implements Listener {
     public void onPlayerJoin(final PlayerJoinEvent event) {
         log.entering(CN, "onPlayerJoin", event);
         Player player = event.getPlayer();
-        plugin.getPlayerLogic().loadPlayerDataAsync(player);
+        plugin.getPlayerDB().updatePlayer(player);
         log.exiting(CN, "onPlayerJoin");
     }
 

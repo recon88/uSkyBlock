@@ -9,9 +9,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import us.talabrek.ultimateskyblock.player.PlayerInfo;
 
-import java.io.IOException;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -51,7 +49,7 @@ public class PlayerNameChangeManager implements Listener {
         String oldName = playerDB.getName(player.getUniqueId());
         if (hasNameChanged(player.getUniqueId(), player.getName())) {
             try {
-                plugin.getServer().getPluginManager().callEvent(new AsyncPlayerNameChangedEvent(player, playerInfo, oldName, player.getName()));
+                plugin.getServer().getPluginManager().callEvent(new AsyncPlayerNameChangedEvent(player, oldName, player.getName()));
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
@@ -63,10 +61,6 @@ public class PlayerNameChangeManager implements Listener {
         if (playerDB == null) {
             return;
         }
-        try {
-            playerDB.updatePlayer(player);
-        } catch (IOException e) {
-            log.log(Level.SEVERE, "Error saving player in database.", e);
-        }
+        playerDB.updatePlayer(player);
     }
 }

@@ -10,6 +10,8 @@ import us.talabrek.ultimateskyblock.uSkyBlock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static dk.lockfuglsang.minecraft.po.I18nUtil.tr;
+
 /**
  * The listener that takes action - if a player changes name.
  */
@@ -32,9 +34,8 @@ public class PlayerNameChangeListener implements Listener {
         String oldName = event.getOldName();
         Player player = event.getPlayer();
         long t1 = System.currentTimeMillis();
+        PlayerInfo playerInfo = plugin.getPlayerInfo(player);
         // TODO: 19/01/2015 - R4zorax: Block for interactions while converting?
-
-        PlayerInfo playerInfo = event.getPlayerInfo();
 
         // Rename the player config files first, but DO NOT load them to prevent it from thinking they were kicked from the island.
         playerInfo.renameFrom(event.getOldName());
@@ -44,8 +45,8 @@ public class PlayerNameChangeListener implements Listener {
 
         double t2 = System.currentTimeMillis();
         t2 = (t2 - t1) / 1000d;
-        String message = String.format("Renamed player %s to %s in %s seconds.", oldName, player.getName(), t2);
+        String message = tr("Renamed player {0} to {1} in {2} seconds.", oldName, player.getName(), t2);
         log.log(Level.INFO, message);
-        player.sendMessage(String.format("\u00a79It took \u00a7a%s\u00a79 seconds to rename your uSkyBlock presence from \u00a7a%s\u00a79.", t2, oldName));
+        player.sendMessage(tr("\u00a79It took \u00a7a{0}\u00a79 seconds to rename your uSkyBlock presence from \u00a7a{1}\u00a79.", t2, oldName));
     }
 }

@@ -121,7 +121,6 @@ public class WolfWorkUSBImporter implements USBImporter {
             // Not really that important - since it's most likely different!
             islandInfo.setLevel(playerInfo.getIslandLevel());
             islandInfo.setBiome("OCEAN");
-            islandInfo.save();
             WorldGuardHandler.updateRegion(Bukkit.getConsoleSender(), islandInfo);
         }
     }

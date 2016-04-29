@@ -2,7 +2,6 @@ package us.talabrek.ultimateskyblock.uuid;
 
 import org.bukkit.entity.Player;
 
-import java.io.IOException;
 import java.util.UUID;
 
 /**
@@ -38,8 +37,8 @@ public interface PlayerDB {
     String getDisplayName(String playerName);
 
     /**
-     * Stores a new name in the DB.
-     * @param name The current name.
+     * Stores a new player in the DB.
+     * @param player The current player.
      */
-    void updatePlayer(Player name) throws IOException;
+    void updatePlayer(Player player);
 }

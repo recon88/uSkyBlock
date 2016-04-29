@@ -4,8 +4,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import us.talabrek.ultimateskyblock.imports.USBImporter;
 import us.talabrek.ultimateskyblock.imports.fixuuidleader.UUIDLeaderImporter;
+import us.talabrek.ultimateskyblock.imports.playerdb.PlayerDBImporter;
 import us.talabrek.ultimateskyblock.imports.update.USBUpdateImporter;
 import us.talabrek.ultimateskyblock.imports.wolfwork.WolfWorkUSBImporter;
+import us.talabrek.ultimateskyblock.imports.yml2db.Yml2DBImporter;
 import us.talabrek.ultimateskyblock.uSkyBlock;
 
 import java.io.File;
@@ -45,6 +47,8 @@ public class USBImporterExecutor {
             importers.add(new WolfWorkUSBImporter());
             importers.add(new UUIDLeaderImporter());
             importers.add(new USBUpdateImporter());
+            importers.add(new PlayerDBImporter());
+            importers.add(new Yml2DBImporter());
             //importers.add(new Name2UUIDImporter());
             ServiceLoader serviceLoader = ServiceLoader.load(USBImporter.class, getClass().getClassLoader());
             for (Iterator<USBImporter> it = serviceLoader.iterator(); it.hasNext(); ) {
@@ -90,9 +94,7 @@ public class USBImporterExecutor {
         int chunkSize = plugin.getConfig().getInt("general.import.maxChunk", 100);
         int delay = plugin.getConfig().getInt("general.import.delay", 15);
         plugin.log(Level.INFO, "Importing " + files.length + " players in chunks of " + chunkSize);
-        if (files.length > 0) {
-            doImport(sender, importer, files, 0, chunkSize, delay);
-        }
+        doImport(sender, importer, files, 0, chunkSize, delay);
     }
 
     private void doImport(final CommandSender sender, final USBImporter importer, final File[] files, final int offset, final int chunkSize, final int delay) {
@@ -105,21 +107,21 @@ public class USBImporterExecutor {
                     File playerFile = files[i];
                     if (importer.importFile(plugin, playerFile)) {
                         count++;
-                        plugin.log(Level.FINE, "Successfully imported player-file " + playerFile);
+                        plugin.log(Level.FINE, "Successfully imported file " + playerFile);
                     } else {
                         failed++;
-                        plugin.log(Level.WARNING, "Could not import player-file " + playerFile);
+                        plugin.log(Level.WARNING, "Could not import file " + playerFile);
                     }
                 }
                 countSuccess += count;
                 countFailed += failed;
-                float progress = 100f*(countSuccess+countFailed)/files.length;
-                sender.sendMessage(String.format("\u00a7eProgress: %02f%% (%d/%d - success:%d, failed:%d)", progress, countFailed+countSuccess, files.length, countSuccess, countFailed));
+                float progress = 100f*(countSuccess+countFailed)/(files.length > 0 ? files.length : 1);
+                sender.sendMessage(tr("\u00a7eProgress: {0,number,#}% ({1}/{2} - success:{3}, failed:{4})", progress, countFailed+countSuccess, files.length, countSuccess, countFailed));
                 if (offset+chunkSize < files.length) {
                     doImport(sender, importer, files, offset + chunkSize, chunkSize, delay);
                 } else {
                     importer.completed(plugin, countSuccess, countFailed);
-                    sender.sendMessage(tr("\u00a7eConverted " + countSuccess + "/" + (countSuccess + countFailed) + " players"));
+                    sender.sendMessage(tr("\u00a7eConverted {0}/{1} files", countSuccess, (countSuccess + countFailed)));
                 }
             }
         }, delay);
